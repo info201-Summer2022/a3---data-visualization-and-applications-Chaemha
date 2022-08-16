@@ -1,0 +1,130 @@
+---
+title: "Assignment 3"
+output: html_document
+date: '2022-08-15'
+---
+```{r setup, include=FALSE}
+library(tidyverse) 
+library(dplyr)
+library(ggplot2)
+library(plotly)
+library(maps)
+library(usdata)
+
+incarceration <- read.csv("https://raw.githubusercontent.com/vera-institute/incarceration-trends/master/incarceration_trends.csv")
+
+country_jail_rate <- incarceration %>% mutate(latinx_jail_rate = (latinx_jail_pop /latinx_pop_15to64)*100) %>% 
+  mutate(black_jail_rate = (black_jail_pop / black_pop_15to64)*100) 
+country_jail_rate <-  country_jail_rate %>% select (year, county_name, latinx_jail_rate, black_jail_rate, state, fips)
+```
+
+### Introduction  
+  _Incarceration rate_  is one of the biggest problem the United States is facing. _Disproportionate amount of incarceration of certain group_ within the country has been issued as a problem and a question. African Americans are often unfairly targeted. This project focuses on _the difference in jail rate between two groups of color which are the black and the latinx_ in three different counties during 2000 to 2018.
+By comparing African American Incarceration rate with latinxs', I am able to _find out whether the black are actually mistreated_ in terms of incarceration. I will be using black_jail_pop, black_pop_15to64, latinx_jail_pop and latinx_pop_15to64 to find out the jail rates. I will also use year and county to filter the data into chosen counties and chosen years. Lastly, I will use state and fips to make a heat map later for visualizing the difference in jail rates between the two in the U.S.  
+  
+```{r}
+LA_county <- country_jail_rate %>% filter(county_name == "Los Angeles County") %>% slice(31:49)
+mean_la_latinx <- mean(LA_county$latinx_jail_rate)
+mean_la_black <- mean(LA_county$black_jail_rate)
+max_la_latinx <- max(LA_county$latinx_jail_rate)
+max_la_black <- max(LA_county$black_jail_rate)
+min_la_latinx <- min(LA_county$latinx_jail_rate)
+min_la_black <- min(LA_county$black_jail_rate)
+Cook_county <- country_jail_rate %>% filter(county_name == "Cook County") %>% slice(31:49)
+mean_cook_latinx <- mean(Cook_county$latinx_jail_rate)
+mean_cook_black <- mean(Cook_county$black_jail_rate)
+max_cook_latinx <- max(Cook_county$latinx_jail_rate)
+max_cook_black <- max(Cook_county$black_jail_rate)
+min_cook_latinx <- min(Cook_county$latinx_jail_rate)
+min_cook_black <- min(Cook_county$black_jail_rate)
+Harris_county <- country_jail_rate %>% filter(county_name == "Harris County") %>% slice(31:49)
+mean_harris_latinx <- mean(Harris_county$latinx_jail_rate)
+mean_harris_black <- mean(Harris_county$black_jail_rate)
+max_harris_latinx <- max(Harris_county$latinx_jail_rate)
+max_harris_black <- max(Harris_county$black_jail_rate)
+min_harris_latinx <- min(Harris_county$latinx_jail_rate)
+min_harris_black <- min(Harris_county$black_jail_rate)
+```
+
+### Summary Information
+  Variables that I found are **mean, max and min jail rates of black and those of latinx in three most populated counties** in the United States. In LA county, the jail rate of the black is _1%_ while that of the latinx is _0.28%_. In Cook county, the mean jail rate of the black is _1.7%_ while the mean jail rate of the latinx is _1.3%_. In Harris county, the mean jail rate of the black is _2.8%_ while that of lantix is _0.7%_. Maximum black jail rate in LA county was _1.18%_ while the maximum latinx jail rate was _0.36%_. Maximum black jail rate in cook county was _2.25%_ while the maximum latinx jail rate was _1.76%_. Maximum black jail rate in Harris county was _3.38%_ while the maximum latinx jail rate was _1.899%_. Minimum black jail rate in LA county was _0.78%_ while the minimum latinx jail rate was _0.21%_. Minimum black jail rate in cook county was _1.04%_ while the minimum latinx jail rate was _0.766%_.Minimum black jail rate in Harris county was _2.20%_ while the minimum latinx jail rate was _0.28%_.
+
+```{r, include=FALSE}
+diff_la <- LA_county %>% mutate(black_latinx_diff = (black_jail_rate / latinx_jail_rate)) %>% 
+  select(year, county_name, black_latinx_diff)
+diff_cook <- Cook_county %>% mutate(black_latinx_diff = (black_jail_rate / latinx_jail_rate)) %>% 
+  select(year, county_name, black_latinx_diff)
+diff_harris <- Harris_county %>% mutate(black_latinx_diff = (black_jail_rate / latinx_jail_rate)) %>% 
+  select(year, county_name, black_latinx_diff)
+combined <- rbind(diff_la, diff_cook, diff_harris)
+ggp_combined <- ggplot(combined, aes(x = year, y = black_latinx_diff, color = county_name)) + geom_line()
+ggp_combined <- ggp_combined + labs(title = "Black Over Lanix Jail Rate By Top 3 County in 2000-2018", y = "Black over Latinx Jail Rate", x= "Year", color = "County")
+```
+
+```{r}
+ggp_combined
+```
+### Graph One (Trend)
+_Black over Latinx Jail Rates is a rate that compares the black jail rate with Latinx Jail rate._ 2.0 of this rate means that Black Jail rate was two times higher than the Latinx Jail rate. This graph shows the trend of black over Latinx Jail Rate. According to the trend chart the most dramatic changes in Black over Latinx incarceration rate during 2000 to 2018 happened in Harris County. The graph of Harris county goes up and down ranging from less than 2.5 times to 10 times. The black over Latinx jail rate peaked in 2005, marking 10.0 times, and dropped dramatically to the lowest point year after, to less than 2.5 times. On the other hand, Cook couty and LA county showed relatively constant trends, each keeping the rate under 5.0 times and 2.5 times. **In all three states, black jail rates were higher than those of the latinx.**
+
+```{r, include = FALSE}
+## Change in jail rate of black people in different regions during 2000-2018 (Variable Comparison Chart)
+black_la <- LA_county %>% select(year, county_name, black_jail_rate)
+black_harris <- Harris_county %>% select(year, county_name, black_jail_rate)
+black_cook <- Cook_county %>% select(year, county_name, black_jail_rate)
+black <- rbind(black_la, black_cook, black_harris)
+
+bar_black <- ggplot(black, aes(x = year, y = black_jail_rate, fill = county_name)) + geom_col(position = "dodge")
+bar_black <- bar_black + labs(title = "Change in Jail Rate of Black in Different Regions (2000-2018)", y = "Black Jail Rate (%)", x = "Year", fill = "County")
+
+```
+
+```{r}
+bar_black
+```
+
+
+### Graph Two (Bar)
+According to the bar chart, Harris county ranked first in black jail rate every year during 2000 to 2018. Cook county followed as second and LA county as third. Harris county showed the highest black jail rate in 2010. Cook county showed the highest black jail rate in 2004. LA county showed the highest black jail rate in 2003. _There were no dramatic changes in black jail rate in three counties._ The lowest changes happened in LA county, keeping the lowest black jail rate every year during 2000 to 2018. 
+
+```{r, include = FALSE}
+filtered <- country_jail_rate %>% filter(year == 2018)
+
+filtered <- filtered %>% mutate(black_over_latinx = (black_jail_rate / latinx_jail_rate)*100) 
+
+map_shapes <- map_data("county") %>% 
+  unite(polyname, region, subregion, sep = ",") %>% left_join(county.fips, by="polyname")
+
+map_data <- map_shapes %>% left_join(filtered, by="fips")
+
+blank_theme <- theme_bw() +
+  theme(
+    axis.line = element_blank(),
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    axis.title = element_blank(),
+    plot.background = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank()
+  )
+
+map <- ggplot(map_data) +
+  geom_polygon(
+    mapping = aes(x = long, y =lat, group = group, fill = black_over_latinx),
+    color = "gray", size = 0.3
+  ) + 
+  coord_map() + 
+  scale_fill_continuous(limits = c(0, max(map_data$black_over_latinx)), na.value = "white", low = "yellow", high = "red") + blank_theme +
+  ggtitle("Black Jail Rate over Latinx Jail Rate in the United States") +
+  guides(fill=guide_legend(title="Black over Latinx jail rate"))
+```
+
+```{r}
+map
+```
+
+
+### Graph Three(Map)
+According to the map, _the jail rate between the black and latix is not significantly different._ The map is overall yellow which means that there are no significant different in the jail rate between the two in the United States. There are few number of counties that shows orange and red on the map and it means that in those counties, black jail rate were significantly higher than the latinx jail rate. _Overall, the jail rate seems to be quite similar in 2018._
+
